@@ -5,6 +5,8 @@ import Text.Printf
 type Var = String
 data Term = Variable Var | Lambda Var Term | Apply Term Term deriving (Show)
 
+-- TODO: Parse input into term
+
 alphaEq :: Term -> Bool
 alphaEq = undefined
 
