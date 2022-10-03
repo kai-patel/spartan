@@ -11,11 +11,9 @@ free (Variable v) = [v]
 free (Lambda x m) = filter (\i -> i /= x) (free m)
 free (Apply m n) = free(m) ++ free(n)
 
-variables :: [Var]
-variables = [l : [] | l <- ['a' .. 'z']] ++ [l : show x | x <- [1 ..], l <- ['a' .. 'z']]
-
 fresh :: [Var] -> Var
 fresh xs = head $ dropWhile (\x -> x `elem` xs) variables
+    where variables = [l : [] | l <- ['a' .. 'z']] ++ [l : show x | x <- [1 ..], l <- ['a' .. 'z']]
 
 --- Substitution with explicit alpha conversion
 substitute :: Term -> Var -> Term -> Term
