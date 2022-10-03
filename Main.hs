@@ -73,9 +73,6 @@ many1P p = do
     xs <- manyP p
     return (x:xs)
 
-alphaEq :: Term -> Bool
-alphaEq = undefined
-
 -- Find all free variables in a given expression
 free :: Term -> [Var]
 free (Variable v) = [v]
