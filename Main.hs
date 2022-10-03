@@ -1,16 +1,29 @@
 module Main where
 
 import Text.Printf
+import Control.Applicative
+import Control.Monad
+import Data.Char
+import qualified Data.Bifunctor as Bifunctor
 
 type Var = String
 data Term = Variable Var | Lambda Var Term | Apply Term Term deriving (Show)
 
 newtype Parser a = Parser { parse :: String -> [(a, String)] }
 
+instance Functor Parser where
+    fmap f p = Parser (fmap (Bifunctor.first f) . parse p)
+
+instance Applicative Parser where
+    pure = result
+    p1 <*> p2 = Parser $ \input -> do
+        (f, input') <- parse p1 input
+        (a, input'') <- parse p2 input'
+        return (f a, input'')
+
 instance Monad Parser where
     p >>= f = Parser $ \input -> concat [parse (f n) input' | (n, input') <- parse p input]
-
-    return = result
+    return = pure
 
 instance MonadPlus Parser where
     mzero = zero
@@ -18,7 +31,7 @@ instance MonadPlus Parser where
 
 instance Alternative Parser where
     empty = zero
-    p1 `<|>` p2 = Parser $ \input -> case parse (p1 `plus` p2) input of
+    p1 <|> p2 = Parser $ \input -> case parse (p1 `plus` p2) input of
         [] -> []
         (x:xs) -> [x]
 
@@ -26,7 +39,7 @@ result :: a -> Parser a
 result value = Parser $ \input -> [(value, input)]
 
 plus :: Parser a -> Parser a -> Parser a
-p1 `plus` p2 = Parser $ \input -> parse p1 inp ++ parse p2 input
+p1 `plus` p2 = Parser $ \input -> parse p1 input ++ parse p2 input
 
 zero :: Parser a
 zero = Parser (const [])
@@ -40,7 +53,7 @@ item = Parser p
 satisfy predicate = item >>= \x -> if predicate x then result x else zero
 
 char :: Char -> Parser Char
-char c = satisfy (== x)
+char c = satisfy (== c)
 
 digit :: Parser Char
 digit = satisfy isDigit
@@ -65,13 +78,39 @@ manyP :: Parser a -> Parser [a]
 manyP p = do
     x <- p
     xs <- manyP p
-    return (x:xs) <|> return []
+    return (x:xs)
+    <|> return []
 
 many1P :: Parser a -> Parser [a]
 many1P p = do
     x <- p
     xs <- manyP p
     return (x:xs)
+
+thenP :: (a -> b -> c) -> Parser a -> Parser b -> Parser c
+thenP combi p1 p2 = do
+    x <- p1
+    xs <- p2
+    return $ combi x xs
+
+spaces :: Parser ()
+spaces = void $ manyP $ satisfy isSpace
+
+token :: Parser a -> Parser a
+token p = p <* spaces
+
+parse' :: Parser a -> Parser a
+parse' p = spaces >> p
+
+bracketed open p close = open >> p <* close
+
+-- BNF Form for Lambda Calculus Syntax
+-- expr ::= \ variable . expr
+-- expr ::= application_term
+-- application_term ::= application_term item
+-- application_term ::= item
+-- item ::= variable
+-- item ::= ( expr )
 
 -- Find all free variables in a given expression
 free :: Term -> [Var]
