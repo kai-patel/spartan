@@ -5,8 +5,73 @@ import Text.Printf
 type Var = String
 data Term = Variable Var | Lambda Var Term | Apply Term Term deriving (Show)
 
+newtype Parser a = Parser { parse :: String -> [(a, String)] }
 
+instance Monad Parser where
+    p >>= f = Parser $ \input -> concat [parse (f n) input' | (n, input') <- parse p input]
 
+    return = result
+
+instance MonadPlus Parser where
+    mzero = zero
+    mplus = plus
+
+instance Alternative Parser where
+    empty = zero
+    p1 `<|>` p2 = Parser $ \input -> case parse (p1 `plus` p2) input of
+        [] -> []
+        (x:xs) -> [x]
+
+result :: a -> Parser a
+result value = Parser $ \input -> [(value, input)]
+
+plus :: Parser a -> Parser a -> Parser a
+p1 `plus` p2 = Parser $ \input -> parse p1 inp ++ parse p2 input
+
+zero :: Parser a
+zero = Parser (const [])
+
+item :: Parser Char
+item = Parser p
+    where
+    p [] = []
+    p (x:xs) = [(x, xs)]
+
+satisfy predicate = item >>= \x -> if predicate x then result x else zero
+
+char :: Char -> Parser Char
+char c = satisfy (== x)
+
+digit :: Parser Char
+digit = satisfy isDigit
+
+lower :: Parser Char
+lower = satisfy isLower
+
+upper :: Parser Char
+upper = satisfy isUpper
+
+letter :: Parser Char
+letter = lower <|> upper
+
+alphanumeric :: Parser Char
+alphanumeric = letter <|> digit
+
+string :: String -> Parser String
+string "" = result ""
+string (x:xs) = char x >> string xs >> result (x:xs)
+
+manyP :: Parser a -> Parser [a]
+manyP p = do
+    x <- p
+    xs <- manyP p
+    return (x:xs) <|> return []
+
+many1P :: Parser a -> Parser [a]
+many1P p = do
+    x <- p
+    xs <- manyP p
+    return (x:xs)
 
 alphaEq :: Term -> Bool
 alphaEq = undefined
