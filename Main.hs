@@ -21,7 +21,8 @@ substitute (Lambda y m) x n
     | y == x = Lambda x m
 
 betaReduce :: Term -> Term
-betaReduce = undefined
+betaReduce (Apply (Lambda v e) e') = substitute e v e'
+betaReduce _ = error "Cannot beta-reduce a non-application"
 
 alphaConvert :: Term -> Term
 alphaConvert = undefined
