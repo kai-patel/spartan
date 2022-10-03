@@ -5,7 +5,8 @@ import Text.Printf
 type Var = String
 data Term = Variable Var | Lambda Var Term | Apply Term Term deriving (Show)
 
--- TODO: Parse input into term
+
+
 
 alphaEq :: Term -> Bool
 alphaEq = undefined
@@ -35,10 +36,9 @@ substitute (Lambda y t) x t'
 
 
 betaReduce :: Term -> Term
-betaReduce (Apply (Lambda v e) e') = substitute e v e'
+betaReduce (Apply (Lambda v e) e') = betaReduce $ substitute e v e'
 betaReduce (Apply a b) = betaReduce $ Apply (betaReduce a) (betaReduce b)
 betaReduce t = t
--- betaReduce t = error $ printf "Could not beta-reduce %s" (show t)
 
 suc =
   Lambda
