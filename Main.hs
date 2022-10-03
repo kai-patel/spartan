@@ -1,5 +1,7 @@
 module Main where
 
+import Text.Printf
+
 type Var = String
 data Term = Variable Var | Lambda Var Term | Apply Term Term deriving (Show)
 
@@ -32,7 +34,83 @@ substitute (Lambda y t) x t'
 
 betaReduce :: Term -> Term
 betaReduce (Apply (Lambda v e) e') = substitute e v e'
-betaReduce _ = error "Cannot beta-reduce a non-application"
+betaReduce (Apply a b) = betaReduce $ Apply (betaReduce a) (betaReduce b)
+betaReduce t = t
+-- betaReduce t = error $ printf "Could not beta-reduce %s" (show t)
+
+suc =
+  Lambda
+    "n"
+    (Lambda
+       "f"
+       (Lambda
+          "x"
+          (Apply
+             (Variable "f")
+             (Apply (Apply (Variable "n") (Variable "f")) (Variable "x")))))
+
+add =
+  Lambda
+    "m"
+    (Lambda
+       "n"
+       (Lambda
+          "f"
+          (Lambda
+             "x"
+             (Apply
+                (Apply (Variable "m") (Variable "f"))
+                (Apply (Apply (Variable "n") (Variable "f")) (Variable "x"))))))
+
+mul =
+  Lambda
+    "m"
+    (Lambda
+       "n"
+       (Lambda
+          "f"
+          (Lambda
+             "x"
+             (Apply
+                (Apply (Variable "m") (Apply (Variable "n") (Variable "f")))
+                (Variable "x")))))
+
+pre =
+  Lambda
+    "n"
+    (Lambda
+       "f"
+       (Lambda
+          "x"
+          (Apply
+             (Apply
+                (Apply
+                   (Variable "n")
+                   (Lambda
+                      "g"
+                      (Lambda
+                         "h"
+                         (Apply
+                            (Variable "h")
+                            (Apply (Variable "g") (Variable "f"))))))
+                (Lambda "u" (Variable "x")))
+             (Lambda "x" (Variable "x")))))
+
+minus =
+  Lambda "n" (Lambda "m" (Apply (Apply (Variable "m") pre) (Variable "n")))
+
+example =
+  Lambda
+    "a"
+    (Lambda
+       "x"
+       (Apply
+          (Apply
+             (Lambda "y" (Apply (Variable "a") (Variable "c")))
+             (Variable "x"))
+          (Variable "b")))
+
+simple = Apply (Lambda ("x") (Apply (Variable "x") (Variable "y"))) (Variable "z")
 
 main :: IO ()
-main = undefined
+main = putStrLn . show $ betaReduce example
