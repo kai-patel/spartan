@@ -11,24 +11,28 @@ free (Variable v) = [v]
 free (Lambda x m) = filter (\i -> i /= x) (free m)
 free (Apply m n) = free(m) ++ free(n)
 
+variables :: [Var]
+variables = [l : [] | l <- ['a' .. 'z']] ++ [l : show x | x <- [1 ..], l <- ['a' .. 'z']]
+
+fresh :: [Var] -> Var
+fresh xs = head $ dropWhile (\x -> x `elem` xs) variables
+
+--- Substitution with explicit alpha conversion
 substitute :: Term -> Var -> Term -> Term
 substitute (Variable y) x (n)
     | y == x = n
     | y /= x = Variable y
 substitute (Apply m1 m2) x n = Apply (substitute m1 x n) (substitute m2 x n)
-substitute (Lambda y m) x n
-    | y /= x && y `notElem` free n = Lambda y (substitute m x n)
-    | y == x = Lambda x m
+substitute (Lambda y t) x t'
+    | x == y = Lambda y t
+    | x /= y = Lambda z (substitute (substitute t y (Variable z)) x t')
+    where
+    z = fresh (free t ++ free t')
+
 
 betaReduce :: Term -> Term
 betaReduce (Apply (Lambda v e) e') = substitute e v e'
 betaReduce _ = error "Cannot beta-reduce a non-application"
-
-alphaConvert :: Term -> Term
-alphaConvert = undefined
-
-
-
 
 main :: IO ()
 main = undefined
