@@ -113,4 +113,4 @@ example =
 simple = Apply (Lambda ("x") (Apply (Variable "x") (Variable "y"))) (Variable "z")
 
 main :: IO ()
-main = putStrLn . show $ betaReduce example
+main = putStrLn . show $ betaReduce simple
