@@ -152,26 +152,33 @@ free (Variable v) = [v]
 free (Lambda x m) = filter (\i -> i /= x) (free m)
 free (Apply m n) = free(m) ++ free(n)
 
+-- Find all variables in a given expression
+used :: Term -> [Var]
+used (Variable v) = [v]
+used (Lambda a b) = [a] ++ used b
+used (Apply a b) = used a ++ used b
+
 -- Get a fresh variable i.e. the first variable not in the given list
 fresh :: [Var] -> Var
 fresh xs = head $ dropWhile (\x -> x `elem` xs) variables
     where variables = [l : [] | l <- ['a' .. 'z']] ++ [l : show x | x <- [1 ..], l <- ['a' .. 'z']]
 
 -- Substitution with explicit alpha conversion
-substitute :: Term -> Var -> Term -> Term
-substitute (Variable y) x (n)
-    | y == x = n
-    | y /= x = Variable y
-substitute (Apply m1 m2) x n = Apply (substitute m1 x n) (substitute m2 x n)
-substitute (Lambda y t) x t'
-    | x == y = Lambda y t
-    | x /= y = Lambda z (substitute (substitute t y (Variable z)) x t')
+substitute :: Term -> Term -> Var -> Term
+-- Substitute m[n/x]
+substitute m@(Variable vm) n x
+    | vm == x = n
+    | vm /= x = m
+substitute (Apply m1 m2) n (x) = Apply (substitute m1 n x) (substitute m2 n x)
+substitute l@(Lambda y m) n x
+    | y == x = Lambda y m
+    | (x /= y) && (y `notElem` (free n)) = Lambda y (substitute m n x)
+    | (x /= y) && (y `elem` (free n)) = Lambda y' (substitute (substitute m (Variable y') y) n x)
     where
-    z = fresh (free t ++ free t')
-
+    y' = fresh (used l)
 
 betaReduce :: Term -> Term
-betaReduce (Apply (Lambda v e) e') = betaReduce $ substitute e v e'
+betaReduce (Apply (Lambda v e) e') = betaReduce $ substitute e e' v
 betaReduce (Apply a b) = betaReduce $ Apply (betaReduce a) (betaReduce b)
 betaReduce t = t
 
