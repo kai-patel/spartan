@@ -63,7 +63,8 @@ upper :: Parser Char
 upper = satisfy isUpper
 
 letter :: Parser Char
-letter = lower <|> upper
+letter = satisfy (isVar)
+    where isVar x = (isLower x || isUpper x) && x /= 'λ'
 
 alphanumeric :: Parser Char
 alphanumeric = letter <|> digit
@@ -129,7 +130,7 @@ variable = do
     pure $ Variable (show x)
 
 abstraction = do
-    _ <- charTok '\\'
+    _ <- charTok '\\' <|> charTok 'λ'
     v <- variable
     _ <- charTok '.'
     rest <- expr
