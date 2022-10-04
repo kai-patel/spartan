@@ -176,6 +176,8 @@ substitute l@(Lambda y e) n x
     | y /= x && (y `elem` (free n)) = Lambda y' (substitute (substitute e (Variable y') y) n x)
     where y' = fresh (used l)
 
+substitute _ _ _ = error "Substitution failure"
+
 betaReduce :: Term -> Term
 betaReduce (Apply (Lambda v e) e') = betaReduce $ substitute e e' v
 betaReduce (Apply a b) = Apply (betaReduce a) (betaReduce b)
