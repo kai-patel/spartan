@@ -1,6 +1,5 @@
 module Main where
 
-import Text.Printf
 import Control.Applicative
 import Control.Monad
 import Data.Char
@@ -32,7 +31,7 @@ instance Alternative Parser where
     empty = zero
     p1 <|> p2 = Parser $ \input -> case parse (p1 `plus` p2) input of
         [] -> []
-        (x:xs) -> [x]
+        (x:_) -> [x]
 
 result :: a -> Parser a
 result value = Parser $ \input -> [(value, input)]
@@ -130,18 +129,18 @@ variable = do
     pure $ Variable (show x)
 
 abstraction = do
-    lambda <- charTok '\\'
+    _ <- charTok '\\'
     v <- variable
-    separator <- charTok '.'
+    _ <- charTok '.'
     rest <- expr
     pure $ (Lambda (show v) rest)
 
 application = do
-    open <- charTok '('
+    _ <- charTok '('
     expr1 <- expr
-    separator <- spaces
+    _ <- spaces
     expr2 <- expr
-    close <- charTok ')'
+    _ <- charTok ')'
     pure $ (Apply expr1 expr2)
 
 expr = variable <|> abstraction <|> application
@@ -163,23 +162,22 @@ fresh :: [Var] -> Var
 fresh xs = head $ dropWhile (\x -> x `elem` xs) variables
     where variables = [l : [] | l <- ['a' .. 'z']] ++ [l : show x | x <- [1 ..], l <- ['a' .. 'z']]
 
--- Substitution with explicit alpha conversion
+-- Substitution arg 3 with arg 2 in arg 1 with explicit alpha conversion
 substitute :: Term -> Term -> Var -> Term
--- Substitute m[n/x]
-substitute m@(Variable vm) n x
-    | vm == x = n
-    | vm /= x = m
-substitute (Apply m1 m2) n (x) = Apply (substitute m1 n x) (substitute m2 n x)
-substitute l@(Lambda y m) n x
-    | y == x = Lambda y m
-    | (x /= y) && (y `notElem` (free n)) = Lambda y (substitute m n x)
-    | (x /= y) && (y `elem` (free n)) = Lambda y' (substitute (substitute m (Variable y') y) n x)
-    where
-    y' = fresh (used l)
+substitute (Variable y) m x
+    | x == y = m
+    | x /= y = Variable y
+
+substitute (Apply a b) m x = Apply (substitute a m x) (substitute b m x)
+substitute l@(Lambda y e) n x
+    | y == x = Lambda x e
+    | y /= x && (y `notElem` (free n)) = Lambda y (substitute e n x)
+    | y /= x && (y `elem` (free n)) = Lambda y' (substitute (substitute e (Variable y') y) n x)
+    where y' = fresh (used l)
 
 betaReduce :: Term -> Term
 betaReduce (Apply (Lambda v e) e') = betaReduce $ substitute e e' v
-betaReduce (Apply a b) = betaReduce $ Apply (betaReduce a) (betaReduce b)
+betaReduce (Apply a b) = Apply (betaReduce a) (betaReduce b)
 betaReduce t = t
 
 suc =
