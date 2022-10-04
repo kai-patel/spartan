@@ -169,6 +169,7 @@ substitute (Variable y) m x
     | x /= y = Variable y
 
 substitute (Apply a b) m x = Apply (substitute a m x) (substitute b m x)
+
 substitute l@(Lambda y e) n x
     | y == x = Lambda x e
     | y /= x && (y `notElem` (free n)) = Lambda y (substitute e n x)
