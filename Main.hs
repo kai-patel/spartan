@@ -23,7 +23,6 @@ instance Applicative Parser where
 
 instance Monad Parser where
     p >>= f = Parser $ \input -> concat [parse (f n) input' | (n, input') <- parse p input]
-    return = pure
 
 instance MonadPlus Parser where
     mzero = zero
@@ -105,12 +104,47 @@ parse' p = spaces >> p
 bracketed open p close = open >> p <* close
 
 -- BNF Form for Lambda Calculus Syntax
+-- ABSTRACTION:
 -- expr ::= \ variable . expr
+-- APPLICATION TERM:
 -- expr ::= application_term
+-- APPLICATION:
 -- application_term ::= application_term item
+-- ITEM:
 -- application_term ::= item
+-- VARIABLE:
 -- item ::= variable
+-- GROUPING:
 -- item ::= ( expr )
+--
+-- variable ::= alpha extension
+-- extension ::=
+-- extension ::= extension_char extension
+-- extension_char ::= alpha | digit | _
+
+charTok :: Char -> Parser Char
+charTok = token <$> char
+
+variable = do
+    x <- token letter
+    pure $ Variable (show x)
+
+abstraction = do
+    lambda <- charTok '\\'
+    v <- variable
+    separator <- charTok '.'
+    rest <- expr
+    pure $ (Lambda (show v) rest)
+
+application = do
+    open <- charTok '('
+    expr1 <- expr
+    separator <- spaces
+    expr2 <- expr
+    close <- charTok ')'
+    pure $ (Apply expr1 expr2)
+
+expr = variable <|> abstraction <|> application
 
 -- Find all free variables in a given expression
 free :: Term -> [Var]
