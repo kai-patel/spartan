@@ -27,6 +27,9 @@ instance MonadPlus Parser where
     mzero = zero
     mplus = plus
 
+instance MonadFail Parser where
+    fail _ = mzero
+
 instance Alternative Parser where
     empty = zero
     p1 <|> p2 = Parser $ \input -> case parse (p1 `plus` p2) input of
@@ -64,7 +67,7 @@ upper = satisfy isUpper
 
 letter :: Parser Char
 letter = satisfy (isVar)
-    where isVar x = (isLower x || isUpper x) && x /= 'λ'
+    where isVar x = (isLower x || isUpper x) && x /= 'λ' && x /= '\\'
 
 alphanumeric :: Parser Char
 alphanumeric = letter <|> digit
@@ -125,25 +128,29 @@ bracketed open p close = open >> p <* close
 charTok :: Char -> Parser Char
 charTok = token <$> char
 
+variable :: Parser Term
 variable = do
     x <- token letter
-    pure $ Variable (show x)
+    pure $ Variable [x]
 
+abstraction :: Parser Term
 abstraction = do
     _ <- charTok '\\' <|> charTok 'λ'
-    v <- variable
+    (Variable v) <- variable
     _ <- charTok '.'
     rest <- expr
-    pure $ (Lambda (show v) rest)
+    pure $ (Lambda v rest)
 
+application :: Parser Term
 application = do
     _ <- charTok '('
     expr1 <- expr
-    _ <- spaces
+    _ <- spaces <|> empty
     expr2 <- expr
     _ <- charTok ')'
     pure $ (Apply expr1 expr2)
 
+expr :: Parser Term
 expr = variable <|> abstraction <|> application
 
 -- Find all free variables in a given expression
