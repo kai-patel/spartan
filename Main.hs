@@ -51,6 +51,7 @@ item = Parser p
     p [] = []
     p (x:xs) = [(x, xs)]
 
+satisfy :: (Char -> Bool) -> Parser Char
 satisfy predicate = item >>= \x -> if predicate x then result x else zero
 
 char :: Char -> Parser Char
@@ -104,6 +105,7 @@ token p = p <* spaces
 parse' :: Parser a -> Parser a
 parse' p = spaces >> p
 
+bracketed :: Parser a -> Parser b -> Parser a -> Parser b
 bracketed open p close = open >> p <* close
 
 -- BNF Form for Lambda Calculus Syntax
@@ -168,7 +170,7 @@ used (Apply a b) = used a ++ used b
 -- Get a fresh variable i.e. the first variable not in the given list
 fresh :: [Var] -> Var
 fresh xs = head $ dropWhile (\x -> x `elem` xs) variables
-    where variables = [l : [] | l <- ['a' .. 'z']] ++ [l : show x | x <- [1 ..], l <- ['a' .. 'z']]
+    where variables = [l : [] | l <- ['a' .. 'z']] ++ [l : show x | x <- [1 :: Int ..], l <- ['a' .. 'z']]
 
 -- Substitution arg 3 with arg 2 in arg 1 with explicit alpha conversion
 substitute :: Term -> Term -> Var -> Term
@@ -192,4 +194,4 @@ betaReduce (Apply a b) = Apply (betaReduce a) (betaReduce b)
 betaReduce t = t
 
 main :: IO ()
-main = putStrLn . show $ betaReduce "\\x.xz"
+main = putStrLn . show $ betaReduce . fst . head $ parse expr "\\x.xz"
