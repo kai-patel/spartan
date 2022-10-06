@@ -193,5 +193,15 @@ betaReduce (Apply (Lambda v e) e') = betaReduce $ substitute e e' v
 betaReduce (Apply a b) = Apply (betaReduce a) (betaReduce b)
 betaReduce t = t
 
+run :: String -> Maybe String
+run input = case parse expr input of
+    [(a,"")] -> Just $ show $ betaReduce a
+    _ -> Nothing
+
 main :: IO ()
-main = putStrLn . show $ betaReduce . fst . head $ parse expr "\\x.xz"
+main = do
+    a <- getLine
+    case run a of
+        Just b -> putStrLn b
+        Nothing -> putStrLn "Parsing error"
+    main
