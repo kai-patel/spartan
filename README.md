@@ -4,8 +4,8 @@ An interpreter for the untyped lambda calculus. Input is parsed into an expressi
 
 ## What is the Lambda Calculus
 
-[Wikipedia](https://en.wikipedia.org/wiki/Lambda_calculus)
-[Stanford](https://plato.stanford.edu/entries/lambda-calculus/)
+- [Wikipedia](https://en.wikipedia.org/wiki/Lambda_calculus)
+- [Stanford](https://plato.stanford.edu/entries/lambda-calculus/)
 
 ## Syntax
 
