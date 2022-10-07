@@ -11,7 +11,7 @@ An interpreter for the untyped lambda calculus. Input is parsed into an expressi
 
 The interpreter parses input terms in a specific manner, to avoid ambiguity with associativity. Function applications must be surrounded by parentheses, for example $\lambda x.xy$ will result in a parsing error. This should instead be written as $\lambda x.(xy)$. This syntax follows the Backaus-Naur form (BNF) grammar given by [OpenDSA](https://opendsa-server.cs.vt.edu/OpenDSA/Books/PL/html/Syntax.html).
 
-Function abstractions can be denoted either through the use of a double-backslash '\\\\', or with the unicode lowercase lambda character 'λ'.
+Function abstractions can be denoted either through the use of a double-backslash '\\', or with the unicode lowercase lambda character 'λ'.
 
 ## Implementation
 
